@@ -1,0 +1,39 @@
+<!DOCTYPE html><html lang="ja"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="manifest.json">
+<title>暗記マスター</title>
+<style>
+body{margin:0;font-family:sans-serif;background:#0f1115;color:#fff}
+.page{display:none;padding:16px 16px 90px}.active{display:block}
+.card{background:#1a1d24;border-radius:16px;padding:16px;margin:10px 0}
+input{width:100%;padding:12px;border-radius:12px;border:none;margin:8px 0;box-sizing:border-box}
+button{padding:12px;border:none;border-radius:12px}
+.primary{background:#4f8cff;color:#fff}.danger{background:#c33;color:#fff}
+.nav{position:fixed;bottom:0;left:0;right:0;background:#17191f;display:flex}
+.nav button{flex:1;background:none;color:#fff}
+</style></head><body>
+<div id="quiz" class="page active"><div class="card"><h2 id="q">問題を追加してください</h2><input id="ans"><button class="primary" onclick="check()">回答</button><div id="result"></div></div></div>
+<div id="add" class="page"><div class="card"><input id="newQ" placeholder="問題"><input id="newA" placeholder="答え"><button class="primary" onclick="addProblem()">追加</button></div></div>
+<div id="list" class="page"><div id="listArea"></div></div>
+<div id="stats" class="page"><div class="card"><div id="statsArea"></div></div></div>
+<div class="nav">
+<button onclick="showPage('quiz')">🏠</button>
+<button onclick="showPage('add')">➕</button>
+<button onclick="showPage('list');renderList()">📚</button>
+<button onclick="showPage('stats');renderStats()">📊</button>
+</div>
+<script>
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');}
+let problems=JSON.parse(localStorage.getItem('ankiMaster')||'[]'); let current=-1;
+const acc=p=>{let t=p.c+p.w;return t?Math.round(p.c/t*100):0;}
+function save(){localStorage.setItem('ankiMaster',JSON.stringify(problems));}
+function addProblem(){let qv=newQ.value.trim(),av=newA.value.trim(); if(!qv||!av)return; problems.push({q:qv,a:av,c:0,w:0}); save(); newQ.value=''; newA.value=''; nextQ();}
+function weighted(){let tot=0,w=[]; problems.forEach(p=>{let x=(p.w+1)*(p.w+1)+(100-acc(p));w.push(x);tot+=x}); let r=Math.random()*tot; for(let i=0;i<w.length;i++){r-=w[i]; if(r<=0)return i;} return 0;}
+function nextQ(){if(!problems.length){document.getElementById('q').textContent='問題を追加してください'; return;} current=weighted(); document.getElementById('q').textContent=problems[current].q; ans.value=''; result.innerHTML='';}
+function check(){if(current<0)return; let p=problems[current]; if(ans.value.trim()===p.a){p.c++; result.innerHTML='✅正解';}else{p.w++; result.innerHTML='❌不正解 正解:'+p.a;} save(); setTimeout(nextQ,1000);}
+function renderList(){let a=document.getElementById('listArea'); a.innerHTML=''; [...problems].sort((x,y)=>acc(x)-acc(y)).forEach(p=>{a.innerHTML+=`<div class="card"><b>${p.q}</b><br>正解率${acc(p)}%<br><details><summary>答えを見る</summary>${p.a}</details></div>`;});}
+function renderStats(){let c=0,w=0; problems.forEach(p=>{c+=p.c;w+=p.w}); document.getElementById('statsArea').innerHTML='問題数:'+problems.length+'<br>総正解率:'+(c+w?Math.round(c/(c+w)*100):0)+'%';}
+function showPage(id){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); document.getElementById(id).classList.add('active');}
+nextQ();
+</script></body></html>
