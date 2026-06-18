@@ -126,19 +126,61 @@ save();renderStats();
 setTimeout(nextQ,1200);
 }
 
+  function deleteProblem(index){
+if(!confirm("この問題を削除しますか？")) return;
+
+problems.splice(index,1);
+save();
+
+renderList();
+renderStats();
+
+if(problems.length){
+nextQ();
+}else{
+document.getElementById("q").textContent="まず問題を追加してください";
+}
+}
+  
 function renderList(){
 listArea.innerHTML="";
-[...problems].sort((a,b)=>acc(a)-acc(b)).forEach((p)=>{
-let level=acc(p)<40?"🔴 超苦手":acc(p)<70?"🟡 苦手":"🟢 得意";
+
+[...problems]
+.map((p,index)=>({p,index}))
+.sort((a,b)=>acc(a.p)-acc(b.p))
+.forEach(({p,index})=>{
+
+let level=
+acc(p)<40?"🔴 超苦手":
+acc(p)<70?"🟡 苦手":
+"🟢 得意";
+
 listArea.innerHTML+=`
 <div class="item">
 <div class="badge">${level}</div>
+
 <h3>${p.q}</h3>
-<div class="small">正解率 ${acc(p)}%</div>
+
+<div class="small">
+正解率 ${acc(p)}%
+</div>
+
 <details>
 <summary>答えを見る</summary>
 <p>${p.a}</p>
 </details>
+
+<button
+class="btn"
+style="
+margin-top:12px;
+background:#ef4444;
+color:white;
+"
+onclick="deleteProblem(${index})">
+削除
+</button>
+
 </div>`;
 });
 }
